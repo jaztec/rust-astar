@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 pub enum CellKind {
     Easy,
     Normal,
@@ -43,15 +45,17 @@ impl Cell {
         }
     }
 
-    fn get_heuristic(&self, target: &Cell) -> Option<f64> {
-        Some(distance(self, target))
+    fn get_heuristic(&self, target: &Cell) -> Option<u32> {
+        Some(distance(self, target) as u32)
     }
 }
 
 pub struct Grid {
     cells: Vec<Vec<Cell>>,
     row_count: u32,
-    col_count: u32
+    col_count: u32,
+    start_cell: (u32, u32),
+    finish_cell: (u32, u32)
 }
 
 impl Grid {
@@ -67,11 +71,13 @@ impl Grid {
         Grid {
             cells: rows,
             row_count: r,
-            col_count: c
+            col_count: c,
+            start_cell: (0, 0),
+            finish_cell: (0, 0),
         }
     }
 
-    pub fn print(self) {
+    pub fn print(&self) {
         print!("|");
         for _ in 0..self.col_count {
             print!("-");
@@ -103,10 +109,14 @@ impl Grid {
     }
 
     pub fn set_start(&mut self, x : u32, y : u32) -> std::io::Result<()> {
+        self.start_cell.0 = y;
+        self.start_cell.1 = x;
         self.set_cell(y, x, CellKind::Start)
     }
 
     pub fn set_finish(&mut self, x : u32, y : u32) -> std::io::Result<()> {
+        self.finish_cell.0 = y;
+        self.finish_cell.1 = x;
         self.set_cell(y, x, CellKind::Finish)
     }
 
@@ -114,6 +124,26 @@ impl Grid {
         self.check_cell(x, y)?;
         self.cells[y as usize][x as usize].passable = kind;
         Ok(())
+    }
+
+    pub fn get_cell(&self, x : u32, y : u32) -> Option<&Cell> {
+        match self.check_cell(x, y) {
+            Ok(()) => Some(&self.cells[y as usize][x as usize]),
+            Err(err) => None
+        }
+    }
+
+    pub fn get_adjacent(&self, cell: &Cell) -> Vec<&Cell> {
+        let mut list: Vec<&Cell> = vec![];
+        for y in cell.y-1..cell.y+1 {
+            for x in cell.x-1..cell.x+1 {
+                match self.get_cell(x, y) {
+                    Some(cell) => list.push(cell),
+                    _ => {}
+                }
+            }
+        }
+        list
     }
 
     fn check_cell(&self, x: u32, y: u32) -> std::io::Result<()> {
@@ -125,4 +155,22 @@ impl Grid {
         }
         Ok(())
     }
+}
+
+pub fn calculate_route(grid: &Grid) -> std::io::Result<Vec<(u32, u32)>> {
+    let start = grid.get_cell(grid.start_cell.1, grid.start_cell.0).unwrap();
+    let finish = grid.get_cell(grid.finish_cell.1, grid.finish_cell.0).unwrap();
+    let mut route: Vec<(u32, u32)> = vec![];
+    let mut list: BTreeMap<u32, &Cell> = BTreeMap::new();
+
+    list.insert(start.get_heuristic(finish).unwrap(), start);
+
+    process(grid, &route, &list)?;
+
+    Ok(route)
+}
+
+fn process(grid: &Grid, mut route: &Vec<(u32, u32)>, list: &BTreeMap<u32, &Cell>) -> std::io::Result<()> {
+
+    Ok(())
 }

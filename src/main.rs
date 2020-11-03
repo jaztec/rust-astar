@@ -21,5 +21,12 @@ fn main() -> std::io::Result<()> {
 
     grid.print();
 
+    match structures::calculate_route(&grid) {
+        Ok(route) => for point in route.iter() {
+            print!("{}, {}\n", point.0, point.1);
+        },
+        Err(err) => return Err(err),
+    }
+
     Ok(())
 }
